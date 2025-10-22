@@ -15,6 +15,7 @@ pipeline {
           passwordVariable: 'DOCKERHUB_TOKEN'
         )]) {
           sh '''
+            docker logout || true
             echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin
             docker push "$DOCKER_IMAGE"
           '''
