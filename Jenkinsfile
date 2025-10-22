@@ -1,15 +1,21 @@
 pipeline {
   agent any
-  environment { DOCKER_IMAGE = "yourdocker/tripnest:${env.BUILD_NUMBER}" }
+  environment {
+    DOCKER_IMAGE = "mhkaungpyae/tripnest:${env.BUILD_NUMBER}"   // <-- use your username here
+  }
   stages {
-    stage('Build') { steps { sh 'docker build -t "$DOCKER_IMAGE" .' } }
+    stage('Build') {
+      steps { sh 'docker build -t "$DOCKER_IMAGE" .' }
+    }
     stage('Push') {
       steps {
-        withCredentials([usernamePassword(credentialsId: 'dockerhub',
-                         usernameVariable: 'DOCKERHUB_USER',
-                         passwordVariable: 'DOCKERHUB_TOKEN')]) {
+        withCredentials([usernamePassword(
+          credentialsId: 'dockerhub',
+          usernameVariable: 'DOCKERHUB_USER',
+          passwordVariable: 'DOCKERHUB_TOKEN'
+        )]) {
           sh '''
-            docker login -u "$DOCKERHUB_USER" -p "$DOCKERHUB_TOKEN"
+            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin
             docker push "$DOCKER_IMAGE"
           '''
         }
@@ -17,12 +23,8 @@ pipeline {
     }
     stage('Deploy') {
       steps {
-        withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
-          sh '''
-            kubectl set image deployment/web web="$DOCKER_IMAGE" --namespace default || true
-            kubectl rollout status deployment/web --namespace default
-          '''
-        }
+        // keep your deploy logic, or temporarily skip if no K8s yet:
+        sh 'echo "Skipping deploy for now"'
       }
     }
   }
